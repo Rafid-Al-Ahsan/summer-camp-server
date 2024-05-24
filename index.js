@@ -43,6 +43,13 @@ const client = new MongoClient(uri, {
         res.send(result);
       });
 
+      // carts collection
+      app.post('/carts', async(req,res) => {
+        const item = req.body;
+        const result = await cartCollection.insertOne(item);
+        res.send(result);
+      })
+
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
       // Ensures that the client will close when you finish/error
