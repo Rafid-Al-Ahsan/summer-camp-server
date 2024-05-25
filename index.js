@@ -36,7 +36,9 @@ const client = new MongoClient(uri, {
       // await client.db("admin").command({ ping: 1 });
       const userClasses = client.db('summerCamp').collection('classes');
       const cartCollection = client.db('summerCamp').collection('carts');
+      const usersCollection = client.db('summerCamp').collection('users');
       
+      // classes collection
       app.get('/classes', async(req,res) => {
         const cursor = userClasses.find();
         const result = await cursor.toArray();
@@ -49,6 +51,31 @@ const client = new MongoClient(uri, {
         const result = await cartCollection.insertOne(item);
         res.send(result);
       })
+
+      app.get('/carts', async(req,res) => {
+        const cursor = cartCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+      });
+
+      app.delete('/carts/:id', async(req,res) => {
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)};
+        const result = await cartCollection.deleteOne(query);
+        res.send(result);
+     })
+
+    //users collection
+    app.post('/users', async (req,res) => {
+       const user = req.body;
+       const query = {email: user.email}
+       const existingUser = await usersCollection.findOne(query);
+
+       if(existingUser) return res.send({ message: 'user already exists'})
+
+       const result = await usersCollection.insertOne(user);
+       res.send(result);
+    })  
 
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
