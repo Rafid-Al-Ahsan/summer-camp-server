@@ -49,7 +49,13 @@ const client = new MongoClient(uri, {
          const item = req.body;
          const result = await userClasses.insertOne(item);
          res.send(result);
-      })
+      });
+
+      app.get('/classes/:instructoremail', async(req,res) => {
+        const instructorEmail = req.params.instructoremail;
+        const user = await userClasses.find({ Email: instructorEmail }).toArray();
+        res.send(user);
+      });
 
       // carts collection
       app.post('/carts', async(req,res) => {
