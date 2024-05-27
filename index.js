@@ -45,6 +45,12 @@ const client = new MongoClient(uri, {
         res.send(result);
       });
 
+      app.post('/classes', async(req,res) => {
+         const item = req.body;
+         const result = await userClasses.insertOne(item);
+         res.send(result);
+      })
+
       // carts collection
       app.post('/carts', async(req,res) => {
         const item = req.body;
