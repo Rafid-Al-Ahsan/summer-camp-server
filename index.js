@@ -87,11 +87,24 @@ async function run() {
             Feedback: classes.feedback,
         }
       }
-      const result = await userClasses  .updateOne(filter, updatedUser, options);
+      const result = await userClasses.updateOne(filter, updatedUser, options);
       res.send(result);
    })
 
-   
+    app.put('/classes/status/:id', async(req,res) => {
+      const id = req.params.id;
+      const classes = req.body;
+      console.log(classes); 
+      const filter = {_id: new ObjectId(id)};
+      const options = {upsert: true};
+      const updatedUser = {
+        $set: {
+            Status: classes.value,
+        }
+      }
+      const result = await userClasses.updateOne(filter, updatedUser, options);
+      res.send(result);
+   })
 
 
 
