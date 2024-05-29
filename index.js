@@ -59,7 +59,7 @@ async function run() {
 
     app.get('/classes/:id', async (req, res) => {
       const Id = req.params.id;
-      const user = await userClasses.find({ _id: new ObjectId(Id) }).toArray();
+      const user = await userClasses.findOne({ _id: new ObjectId(Id)});
       res.send(user);
     });
 
@@ -78,6 +78,23 @@ async function run() {
     });
 
     app.put('/classes/:id', async(req,res) => {
+      const id = req.params.id;
+      const classes = req.body; 
+      const filter = {_id: new ObjectId(id)};
+      const options = {upsert: true};
+      const updatedUser = {
+        $set: {
+            ClassName: classes.classname,
+            Img: classes.img,     
+            Seats: classes.price,
+            Price: classes.seat,
+        }
+      }
+      const result = await userClasses.updateOne(filter, updatedUser, options);
+      res.send(result);
+   })
+
+    app.put('/classes/feedback/:id', async(req,res) => {
       const id = req.params.id;
       const classes = req.body; 
       const filter = {_id: new ObjectId(id)};
