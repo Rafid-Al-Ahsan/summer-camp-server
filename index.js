@@ -146,6 +146,12 @@ async function run() {
     })
 
     //users collection
+    app.get('/users', async (req, res) => {
+      const cursor = usersCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.post('/users', async (req, res) => {
       const user = req.body;
       const query = { email: user.email }
@@ -156,6 +162,21 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     })
+
+    app.put('/users/:id', async(req,res) => {
+      const id = req.params.id;
+      const classes = req.body;
+      const filter = {_id: new ObjectId(id)}; 
+      const options = {upsert: true};
+      const updatedUser = {
+        $set: {
+            role: classes.value,
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updatedUser, options);
+      res.send(result);
+   })
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
