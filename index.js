@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const port = process.env.PORT || 5001
 const cors = require('cors')
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
@@ -37,6 +38,14 @@ async function run() {
     const userClasses = client.db('summerCamp').collection('classes');
     const cartCollection = client.db('summerCamp').collection('carts');
     const usersCollection = client.db('summerCamp').collection('users');
+
+    //jwt 
+    app.post('/jwt', (req,res) => {
+       const user = req.body;
+       console.log(user);
+       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
+       res.send({ token });
+    })
 
     // classes collection
     app.get('/classes', async (req, res) => {
@@ -138,6 +147,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/carts/:email', async (req,res) => {
+        const userEmail = req.params.email;
+        const user = await cartCollection.find({ UserEmail: userEmail}).toArray();
+        res.send(user);
+    })
+
+
+
     app.delete('/carts/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -150,6 +167,16 @@ async function run() {
       const cursor = usersCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    app.get('/users/instructor', async (req, res) => {
+      try {
+        const cursor = usersCollection.find({ role: 'Instructor' });
+        const result = await cursor.toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'An error occurred while fetching users.', error });
+      }
     });
 
     app.post('/users', async (req, res) => {
