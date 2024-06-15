@@ -1,17 +1,19 @@
 const express = require('express')
 const app = express()
+require('dotenv').config();
 const port = process.env.PORT || 5001
 const cors = require('cors')
 const jwt = require('jsonwebtoken');
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-require('dotenv').config();
+
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.t79plj2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -60,6 +62,7 @@ async function run() {
     const userClasses = client.db('summerCamp').collection('classes');
     const cartCollection = client.db('summerCamp').collection('carts');
     const usersCollection = client.db('summerCamp').collection('users');
+    const paymentCollection = client.db("summerCamp").collection("payments");
 
     //jwt 
     app.post('/jwt', (req, res) => {
@@ -82,15 +85,15 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/classes/email/:instructoremail', verifyJWT, async (req, res) => {
+    app.get('/classes/email/:instructoremail',   async (req, res) => {
       // console.log(req.headers.authorization);
 
       // optional: if you want to make it more secure
-      const decoded = req.decoded;
-      console.log('came back after verify', decoded);
-      if(decoded.email !== req.params.instructoremail){
-          return res.status(403).send({error: 1, message: 'forbidden access'})
-      }
+      // const decoded = req.decoded;
+      // console.log('came back after verify', decoded);
+      // if(decoded.email !== req.params.instructoremail){
+      //     return res.status(403).send({error: 1, message: 'forbidden access'})
+      // }
 
       const instructorEmail = req.params.instructoremail;
       const user = await userClasses.find({ Email: instructorEmail }).toArray();
@@ -243,21 +246,54 @@ async function run() {
       res.send(role);
     })
 
-    // create payment intent
-    app.post('/create-payment-intent',  async(req, res) => {
-       const {price} = req.body;
+    // // create payment intent
+    // app.post('/create-payment-intent',  async(req, res) => {
+    //    const {price} = req.body;
 
-       const amount = price*100;
-       console.log(price, amount);
-       const paymentIntent = await stripe.paymentIntents.create({
-          amount: amount,
-          currency: 'usd',
-          payment_method_types: ['card']
-       });
-       res.send({
-          clientSecret: paymentIntent.client_secret
-       })
+    //    const amount = price*100;
+    //    console.log(price, amount);
+    //    const paymentIntent = await stripe.paymentIntents.create({
+    //       amount: amount,
+    //       currency: 'usd',
+    //       payment_method_types: ['card']
+    //    });
+    //    res.send({
+    //       clientSecret: paymentIntent.client_secret
+    //    })
+    // })
+
+
+    app.post('/create-payment-intent',  async (req, res) => {
+      const { price } = req.body;
+      console.log(price);
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
     })
+
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
+
+      const query = { _id: { $in: payment.cartItems.map(id => new ObjectId(id)) } }
+      const deleteResult = await cartCollection.deleteMany(query)
+
+      res.send({ insertResult, deleteResult });
+    })
+
+    app.get('/payments/:email', async (req, res) => {
+      const userEmail = req.params.email;
+      const user = await paymentCollection.find({ email: userEmail }).toArray();
+      res.send(user);
+    })
+    
 
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
