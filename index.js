@@ -56,7 +56,7 @@ const verifyJWT = (req, res, next) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    client.connect();
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     const userClasses = client.db('summerCamp').collection('classes');
@@ -85,26 +85,26 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/classes/email/:instructoremail',   async (req, res) => {
-      // console.log(req.headers.authorization);
+    app.get('/classes/email/:instructoremail', verifyJWT,  async (req, res) => {
+      console.log(req.headers.authorization);
 
       // optional: if you want to make it more secure
-      // const decoded = req.decoded;
-      // console.log('came back after verify', decoded);
-      // if(decoded.email !== req.params.instructoremail){
-      //     return res.status(403).send({error: 1, message: 'forbidden access'})
-      // }
+      const decoded = req.decoded;
+      console.log('came back after verify', decoded);
+      if(decoded.email !== req.params.instructoremail){
+          return res.status(403).send({error: 1, message: 'forbidden access'})
+      }
 
       const instructorEmail = req.params.instructoremail;
       const user = await userClasses.find({ Email: instructorEmail }).toArray();
       res.send(user);
     });
 
-    // app.get('/classes/:id', async (req, res) => {
-    //   const Id = req.params.id;
-    //   const user = await userClasses.findOne({ _id: new ObjectId(Id) });
-    //   res.send(user);
-    // });
+    app.get('/classes/:id', async (req, res) => {
+      const Id = req.params.id;
+      const user = await userClasses.findOne({ _id: new ObjectId(Id) });
+      res.send(user);
+    });
 
     // app.get('/classes/:id/Feedback', async (req, res) => {
     //   // const Id = req.params.id;
@@ -181,7 +181,7 @@ async function run() {
     //   res.send(result);
     // });
 
-    app.get('/carts/:email', async (req, res) => {
+    app.get('/carts/:email', verifyJWT, async (req, res) => {
       const userEmail = req.params.email;
       const user = await cartCollection.find({ UserEmail: userEmail }).toArray();
       res.send(user);
@@ -197,7 +197,7 @@ async function run() {
     })
 
     //users collection
-    app.get('/users', verifyJWT,  async (req, res) => {
+    app.get('/users', async (req, res) => {
       const cursor = usersCollection.find();
       const result = await cursor.toArray();  
       res.send(result);
